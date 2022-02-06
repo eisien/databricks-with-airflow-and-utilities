@@ -9,8 +9,8 @@ clone the repository and start the docker containers. If running in MacOS do con
 ## run airflow instance
 * docker-compose up
 
-# Setting up airflow databricks default connection with Personal Access Token (PAT)
-Create PAT that can be used to connect with databricks instance.
+# Submit job to databricks using default databricks connection and Personal Access Token (PAT)
+Create PAT which authorizes to connect with databricks instance.
 * create airflow connection with 'connection_id' databricks_default which is the default connection name to connect with databricks
 * select databricks as connection type
 * set host as "https://<databricks-instance-url>/
