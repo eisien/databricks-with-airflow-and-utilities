@@ -21,6 +21,5 @@ job_params = {
 }
 
 databricks_job = DatabricksSubmitRunOperator(task_id="db_notebook_job",json=job_params,dag=dag)
-hello_operator = PythonOperator(task_id='hello_task', python_callable=print_hello, dag=dag)
 
 databricks_job
