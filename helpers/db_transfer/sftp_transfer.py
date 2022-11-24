@@ -1,3 +1,84 @@
+import sys
+import threading
+import shutil
+
+MB = 1024 * 1024
+
+class TransferCallback:
+    """
+    Handle callbacks from the transfer manager.
+
+    The transfer manager periodically calls the __call__ method throughout
+    the upload and download process so that it can take action, such as
+    displaying progress to the user and collecting data about the transfer.
+    
+    Parameters:
+        target_size, int: target file size in bytes
+        
+    """
+
+    def __init__(self, target_size):
+        self._target_size = target_size/MB
+        self._total_transferred = 0
+        self._lock = threading.Lock()
+        self.thread_info = {}
+
+    def __call__(self, bytes_transferred):
+        """
+        The callback method that is called by the transfer manager.
+
+        Display progress during file transfer and collect per-thread transfer
+        data. This method can be called by multiple threads, so shared instance
+        data is protected by a thread lock.
+        
+        Parameters:
+            bytes_transferred, int
+        
+        """
+        thread = threading.current_thread()
+        with self._lock:
+            self._total_transferred += bytes_transferred
+            if thread.ident not in self.thread_info.keys():
+                self.thread_info[thread.ident] = bytes_transferred
+            else:
+                self.thread_info[thread.ident] += bytes_transferred
+
+            target = self._target_size * MB
+            sys.stdout.write(
+                f"\r{self._total_transferred} of {target} bytes transferred "
+                f"({(self._total_transferred / target) * 100:.2f}%).")
+            sys.stdout.flush()
+            
+            
+COPY_BUFSIZE = 1024*1024  # bytes
+
+def copyfileobj_with_callback(fsrc, fdst, length=0,callback=None):
+    
+    """copy data from file-like object fsrc to file-like object fdst
+    
+    Parameters:
+        fsrc: source file-like object
+        fdst: destination file-like object
+        length: buffer length in bytes, default=0
+        callback: a callback object with method '__call__(bytes_transferred)' implemented
+    
+    """
+    if not length:
+        length = COPY_BUFSIZE
+    # Localize variable access to minimize overhead.
+    fsrc_read = fsrc.read
+    fdst_write = fdst.write
+    while True:
+        buf = fsrc_read(length)
+        if not buf:
+            break
+        fdst_write(buf)
+        if callback is not None:
+            callback.__call__(length)
+            
+
+            
+            
 def get_ftp_connection():
     """
         get sftp connnection and return an instance
